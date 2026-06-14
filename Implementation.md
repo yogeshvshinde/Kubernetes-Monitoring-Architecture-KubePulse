@@ -41,10 +41,10 @@ KubePulse/
     ├── app.js                # Frontend logic & WebSocket client
     └── Dockerfile            # NGINX frontend server build
 ```
-
----
-
 ## Detailed Step-by-Step Phases
+
+Requirements:
+
 
 ### Phase 1: Local Ingress Controller Setup
 To route HTTP traffic from the host machine into the Kind cluster, we will deploy the NGINX Ingress Controller.
@@ -198,6 +198,131 @@ Lock down access and logs for production readiness.
    - Use Kubernetes `Secrets` to store API keys, DB credentials, and notification webhook URLs.
 
 ---
+
+---
+**Run the following commands in your own PowerShell or command-line terminal to set up the Kind cluster:**
+
+Step 1: Ensure Docker is Running
+Open Docker Desktop manually on your computer and make sure it is fully running.
+
+Step 2: Install Kind
+In your terminal, run the following command to install Kind via Windows Package Manager:
+
+Open powershell ( For Windows operating system)
+
+winget install Kubernetes.kind
+
+(You may need to restart your terminal after this step to load kind into your environment variables/PATH).
+
+Step 3: Create the Kind Cluster
+Navigate to your project directory and run the following command to create the cluster:
+
+**powershell**
+
+kind create cluster --config kind-config.yaml --name kubepulse
+
+
+**Summary of Created Files**
+
+Kubernetes Configuration & Manifests:
+
+**k8s/namespace.yaml**
+ — Defines the kubepulse namespace.
+**k8s/rbac.yaml**
+ — Sets up ServiceAccount and read-only ClusterRole credentials.
+**k8s/backend.yaml**
+ — Deploys the FastAPI server.
+**k8s/frontend.yaml**
+ — Deploys the NGINX frontend server.
+**k8s/ingress.yaml**
+ — Defines route paths for /api and /.
+ 
+**FastAPI Python Backend:**
+
+**backend/requirements.txt**
+ — Core Python libraries.
+backend/Dockerfile
+ — Container configuration.
+**backend/app/**
+init
+.py
+ — Module initialization.
+ 
+ **backend/app/k8s_client.py**
+ — Connects and gathers resources from the Kubernetes API.
+ 
+**backend/app/main.py**
+ — Exposes API REST endpoints.
+Immersive Web Dashboard:
+**frontend/index.html**
+ — HTML template.
+**frontend/styles.css**
+ — Dark mode glassmorphic styling.
+**frontend/app.js**
+ — Directs polling updates.
+frontend/Dockerfile
+ — Static NGINX web server build.
+
+**Immersive Web Dashboard:**
+frontend/index.html
+ — HTML template.
+frontend/styles.css
+ — Dark mode glassmorphic styling.
+frontend/app.js
+ — Directs polling updates.
+frontend/Dockerfile
+ — Static NGINX web server build.
+
+
+ **Step-by-Step Deployment Commands**
+To deploy these components onto your Kind cluster:
+
+1. Setup NGINX Ingress Controller on Kind
+In your terminal, apply the official Ingress controller:
+
+**powershell**
+
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+(Wait a few moments for the ingress pods to be in Running status)
+
+2. Build and Load Docker Images
+Build both the backend and frontend Docker containers locally, and then load them directly into your Kind cluster (saving you from needing to push them to Docker Hub):
+
+**powershell**
+
+
+# Build backend
+docker build -t kubepulse-backend:latest ./backend
+# Load backend into cluster
+kind load docker-image kubepulse-backend:latest --name kubepulse
+# Build frontend
+docker build -t kubepulse-frontend:latest ./frontend
+# Load frontend into cluster
+kind load docker-image kubepulse-frontend:latest --name kubepulse
+3. Deploy Manifests
+Deploy the namespace, RBAC permissions, services, and Ingress routing configuration:
+
+**powershell**
+
+
+# Create resources
+Create a directory named k8s and app files to below paths,
+
+k8s/namespace.yaml
+k8s/rbac.yaml
+k8s/database.yml
+k8s/backend.yaml
+k8s/frontend.yaml
+k8s/ingress.yaml
+
+Make sub-directory named monitoring for Prometheus and Grafana Manifests
+add files to path
+k8s/monitoring
+alertmanager.yml
+grafana.yml
+prometheus.yml
+
 
 ## Verification & Deployment Workflow
 
