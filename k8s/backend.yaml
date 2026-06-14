@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubepulse-backend
+  namespace: kubepulse
+  labels:
+    app: kubepulse-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubepulse-backend
+  template:
+    metadata:
+      labels:
+        app: kubepulse-backend
+    spec:
+      serviceAccountName: kubepulse-backend
+      containers:
+      - name: backend
+        image: kubepulse-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        env:
+        - name: IN_CLUSTER
+          value: "true"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubepulse-backend
+  namespace: kubepulse
+  labels:
+    app: kubepulse-backend
+spec:
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: kubepulse-backend

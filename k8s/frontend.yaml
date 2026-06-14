@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubepulse-frontend
+  namespace: kubepulse
+  labels:
+    app: kubepulse-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubepulse-frontend
+  template:
+    metadata:
+      labels:
+        app: kubepulse-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: kubepulse-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubepulse-frontend
+  namespace: kubepulse
+  labels:
+    app: kubepulse-frontend
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: kubepulse-frontend

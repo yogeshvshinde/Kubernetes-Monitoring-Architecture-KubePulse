@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubepulse-backend
+  namespace: kubepulse
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubepulse-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "nodes", "namespaces", "services", "events", "persistentvolumes", "persistentvolumeclaims"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubepulse-backend-binding
+subjects:
+- kind: ServiceAccount
+  name: kubepulse-backend
+  namespace: kubepulse
+roleRef:
+  kind: ClusterRole
+  name: kubepulse-reader
+  apiGroup: rbac.authorization.k8s.io
