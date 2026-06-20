@@ -10,7 +10,7 @@ data:
     - name: Prometheus
       type: prometheus
       access: proxy
-      url: http://prometheus.kubepulse.svc.cluster.local:9090
+      url: http://prometheus.kubepulse.svc.cluster.local:9090/prometheus
       isDefault: true
     - name: Alertmanager
       type: alertmanager
@@ -18,6 +18,303 @@ data:
       url: http://alertmanager.kubepulse.svc.cluster.local:9093
       jsonData:
         implementation: prometheus
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provider
+  namespace: kubepulse
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-k8s-dashboard
+  namespace: kubepulse
+data:
+  k8s-dashboard.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {
+              "type": "datasource",
+              "uid": "grafana"
+            },
+            "enable": true,
+            "hide": true,
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "title": "Active Pods",
+          "type": "stat",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(kubelet_active_pods)",
+              "instant": true,
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "textMode": "value"
+          }
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 4,
+            "w": 9,
+            "x": 6,
+            "y": 0
+          },
+          "id": 2,
+          "title": "Cluster CPU Usage (Cores)",
+          "type": "gauge",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[2m]))",
+              "instant": true,
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "min": 0,
+              "max": 4,
+              "color": {
+                "mode": "palette-classic"
+              }
+            }
+          }
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 4,
+            "w": 9,
+            "x": 15,
+            "y": 0
+          },
+          "id": 3,
+          "title": "Cluster Memory Usage",
+          "type": "gauge",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})",
+              "instant": true,
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              }
+            }
+          }
+        },
+        {
+          "title": "CPU Usage per Pod (Top 10)",
+          "type": "timeseries",
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "id": 4,
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[2m])) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "none"
+            }
+          }
+        },
+        {
+          "title": "Memory Usage per Pod (Top 10)",
+          "type": "timeseries",
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "id": 5,
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"}) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "bytes"
+            }
+          }
+        },
+        {
+          "title": "Network RX Rate per Pod",
+          "type": "timeseries",
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 6,
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(rate(container_network_receive_bytes_total[2m])) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "Bps"
+            }
+          }
+        },
+        {
+          "title": "Network TX Rate per Pod",
+          "type": "timeseries",
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 7,
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "editorMode": "code",
+              "expr": "sum(rate(container_network_transmit_bytes_total[2m])) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "Bps"
+            }
+          }
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 39,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "KubePulse Kubernetes Monitoring",
+      "uid": "kubepulse-k8s",
+      "version": 1,
+      "weekStart": ""
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -52,6 +349,8 @@ spec:
           value: "http://localhost/grafana/"
         - name: GF_SERVER_SERVE_FROM_SUB_PATH
           value: "true"
+        - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
+          value: "/var/lib/grafana/dashboards/k8s-dashboard.json"
         resources:
           limits:
             cpu: "500m"
@@ -62,10 +361,20 @@ spec:
         volumeMounts:
         - name: grafana-datasources-volume
           mountPath: /etc/grafana/provisioning/datasources/
+        - name: grafana-dashboards-provider-volume
+          mountPath: /etc/grafana/provisioning/dashboards/
+        - name: grafana-dashboards-volume
+          mountPath: /var/lib/grafana/dashboards/
       volumes:
       - name: grafana-datasources-volume
         configMap:
           name: grafana-datasources
+      - name: grafana-dashboards-provider-volume
+        configMap:
+          name: grafana-dashboards-provider
+      - name: grafana-dashboards-volume
+        configMap:
+          name: grafana-k8s-dashboard
 ---
 apiVersion: v1
 kind: Service
